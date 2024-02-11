@@ -88,7 +88,7 @@ And to run the container:
 
 ## Contributing
 
-We welcome contributions from Linkopus team members. Please feel free to fork the repository, make your changes, and submit a pull request.
+We welcome contributions from Linkopus team members. Please feel free to create a new branch, make your changes, and submit a pull request.
 
 ## License
 
