@@ -18,13 +18,16 @@ These instructions will help you set up a copy of this template for development 
    Clone this repository to your local machine to begin working on your microservice:
 
     `git clone https://github.com/Linkopus/nodejs-microservice-template.git`
+   
+   Navigate to the repository:
+   
     `cd nodejs-microservice-template`
 
-2. **Install Dependencies**
+3. **Install Dependencies**
 
 Install the necessary npm packages defined in `package.json`:
 
-    `npm install`
+    npm install
   
 
 ### Project Structure
@@ -44,7 +47,7 @@ Here's an overview of the project's directory structure:
 
 To start the microservice locally, run:
 
-    `npm run dev`
+    npm run dev
 
 
 This command will start the application in development mode with hot reloading enabled.
@@ -53,7 +56,7 @@ This command will start the application in development mode with hot reloading e
 
 Execute the following command to run the test suite:
 
-    `npm test`
+    npm test
 
 
 This will run all tests defined in the `__tests__/` directory using Jest.
@@ -62,12 +65,12 @@ This will run all tests defined in the `__tests__/` directory using Jest.
 
 To check for linting errors in the TypeScript files, run:
 
-    `npm run lint`
+    npm run lint
 
 
 To automatically fix linting errors, run:
 
-    `npm run lint:fix`
+    npm run lint:fix
 
 
 
@@ -75,12 +78,12 @@ To automatically fix linting errors, run:
 
 To build a Docker container for the microservice, execute:
 
-    `docker build -t linkopus-nodejs-microservice-template .`
+    docker build -t linkopus-nodejs-microservice-template .
 
 
 And to run the container:
 
-    `docker run -p 3000:3000 linkopus-nodejs-microservice-template`
+    docker run -p 3000:3000 linkopus-nodejs-microservice-template
 
 
 ## Contributing
