@@ -72,7 +72,22 @@ To automatically fix linting errors, run:
 
     npm run lint:fix
 
+### Code Coverage
 
+To generate code coverage reports, run:
+
+    npm run coverage
+    
+### Audit for Vulnerabilities
+
+To check for vulnerabilities in the dependencies, run:
+
+    npm audit
+
+
+To automatically fix vulnerabilities, run:
+
+    npm audit fix
 
 ### Dockerization
 
