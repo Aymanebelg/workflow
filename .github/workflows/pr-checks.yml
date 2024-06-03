@@ -5,12 +5,11 @@ on:
     branches: [development]
 
 jobs:
-
-  test:
+  setup:
     runs-on: ubuntu-latest
     environment: Dev
     steps:
-      - uses: actions/checkout@v3 
+      - uses: actions/checkout@v3
       - name: Set up .npmrc
         run: | 
           echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
@@ -18,40 +17,55 @@ jobs:
       - uses: actions/setup-node@v1
         with:
           node-version: '20'
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - run: npm install
-      - run: npm run test 
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+      - run: npm install
 
-  lint:
+  test:
+    needs: setup
     runs-on: ubuntu-latest
     environment: Dev
     steps:
       - uses: actions/checkout@v3
-      - name: Set up .npmrc
-        run: | 
-          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
-          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
       - uses: actions/setup-node@v1
-      - name: "run linter"
-        uses: actions/setup-node@v1
         with:
-          node-version: 20
-      - run: npm install
+          node-version: '20'
+      - run: npm run test
+
+  lint:
+    needs: setup
+    runs-on: ubuntu-latest
+    environment: Dev
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '20'
       - run: npm run lint
 
   coverage:
-    environment: Dev
+    needs: setup
     runs-on: ubuntu-latest
+    environment: Dev
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Node.js
-        uses: actions/setup-node@v1
+      - uses: actions/setup-node@v1
         with:
-          node-version: 20
-      - name: Set up .npmrc
-        run: | 
-          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
-          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - run: npm install
+          node-version: '20'
       - run: npm run coverage
       - name: Code Coverage Report
         uses: romeovs/lcov-reporter-action@v0.3.1
@@ -72,20 +86,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
     
   security-check:
+    needs: setup
     runs-on: ubuntu-latest
     environment: Dev
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - uses: actions/setup-node@v1
         with:
-          node-version: 20
-      - name: Set up .npmrc
-        run: | 
-          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
-          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - name: Install dependencies
-        run: npm install
+          node-version: '20'
       - name: Run npm audit
         run: npm audit --audit-level=high
         continue-on-error: true
