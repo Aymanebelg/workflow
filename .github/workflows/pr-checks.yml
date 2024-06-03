@@ -1,27 +1,36 @@
 name: Quality Assurance GitHub Actions Workflow
 
 on:
-  push:
-    branches: [ development ]
   pull_request:
-    branches: [ development ]
+    branches: [development]
+
 jobs:
+
   test:
     runs-on: ubuntu-latest
-
+    environment: Dev
     steps:
       - uses: actions/checkout@v3
-      - name: "run tests"
-        uses: actions/setup-node@v1
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
+      - uses: actions/setup-node@v1
         with:
-          node-version: 20
+          node-version: '20'
       - run: npm install
-      - run: npm run test
+      - run: npm run test 
 
   lint:
     runs-on: ubuntu-latest
+    environment: Dev
     steps:
       - uses: actions/checkout@v3
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
+      - uses: actions/setup-node@v1
       - name: "run linter"
         uses: actions/setup-node@v1
         with:
@@ -30,6 +39,7 @@ jobs:
       - run: npm run lint
 
   coverage:
+    environment: Dev
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -37,6 +47,10 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 20
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
       - run: npm install
       - run: npm run coverage
       - name: Code Coverage Report
@@ -45,7 +59,7 @@ jobs:
           github-token: ${{ secrets.GH_PAT }}
           lcov-file: ./coverage/lcov.info
           delete-old-comments: true
-
+    
   check-pr-title:
     runs-on: ubuntu-latest
     permissions:
@@ -56,15 +70,20 @@ jobs:
         with:
           regex: '^(feat|fix|refactor|docs|test):\s\[\w+-\d+\]\s.+$'
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
+    
   security-check:
     runs-on: ubuntu-latest
+    environment: Dev
     steps:
       - uses: actions/checkout@v2
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
           node-version: 20
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
       - name: Install dependencies
         run: npm install
       - name: Run npm audit

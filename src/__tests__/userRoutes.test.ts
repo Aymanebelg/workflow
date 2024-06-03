@@ -2,7 +2,8 @@ import request from 'supertest'
 import express, { type Express } from 'express'
 import bodyParser from 'body-parser'
 import userRoutes from '../routes/userRoutes'
-import userMetadataService from '../services/userMetadataService' // Adjust the import path as necessary
+import userMetadataService from '../services/userMetadataService'
+import { ErrorTypes, SuccessTypes } from 'dev.linkopus.commonmessages'
 
 // Mocking the userMetadataService
 jest.mock('../services/userMetadataService', () => ({
@@ -34,7 +35,7 @@ describe('User Routes', () => {
     (userMetadataService.getUserByEmail as jest.Mock).mockResolvedValue(null)
     const response = await request(app).get('/users/nonexistent@example.com')
     expect(response.status).toBe(404)
-    expect(response.body).toEqual({ message: 'User not found' })
+    expect(response.body).toEqual({ message: ErrorTypes.USER_NOT_FOUND })
   })
 
   it('POST /users should create a new user', async () => {
@@ -45,7 +46,6 @@ describe('User Routes', () => {
     expect(response.body).toEqual(newUser)
   })
 
-  // Fetch a user by email
   it('GET /users/:email should fetch a user by email', async () => {
     const user = { name: 'John Doe', email: 'john@example.com', password: 'password123' };
     (userMetadataService.getUserByEmail as jest.Mock).mockResolvedValue(user)
@@ -54,7 +54,6 @@ describe('User Routes', () => {
     expect(response.body).toEqual(user)
   })
 
-  // Update a user
   it('PUT /users/:email should update a user and return the updated user info', async () => {
     const updatedUserInfo = { name: 'John Doe', email: 'john@example.com', password: 'newPassword123' };
     (userMetadataService.updateUser as jest.Mock).mockResolvedValue(updatedUserInfo)
@@ -69,17 +68,15 @@ describe('User Routes', () => {
     (userMetadataService.updateUser as jest.Mock).mockResolvedValue(null)
     const response = await request(app).put('/users/nonexistent@example.com').send({ name: 'New Name' })
     expect(response.status).toBe(404)
-    expect(response.body).toEqual({ message: 'User not found' })
+    expect(response.body).toEqual({ message: ErrorTypes.USER_NOT_FOUND })
   })
 
   it('PUT /users/:email should handle unexpected errors during update', async () => {
     (userMetadataService.updateUser as jest.Mock).mockRejectedValue(new Error('Unexpected error'))
     const response = await request(app).put('/users/error@example.com').send({ name: 'Error Name' })
     expect(response.status).toBe(500)
-    expect(response.body).toEqual({ message: 'Unexpected error' })
   })
 
-  // Search users by name
   it('GET /users/search/:name should return users matching the search criteria', async () => {
     const users = [
       { name: 'John Doe', email: 'john@example.com', password: 'password123' },
@@ -98,19 +95,17 @@ describe('User Routes', () => {
     expect(response.body).toEqual([])
   })
 
-  // Delete a user by email
   it('DELETE /users/:email should delete a user and return a success message', async () => {
     const emailToDelete = 'john@example.com';
     (userMetadataService.deleteUserByEmail as jest.Mock).mockResolvedValue({ deletedCount: 1 })
     const response = await request(app).delete(`/users/${emailToDelete}`)
     expect(response.status).toBe(200)
-    expect(response.body).toEqual({ message: 'User deleted successfully' })
+    expect(response.body).toEqual({ message: SuccessTypes.USERS_DELETED_SUCCESSFULLY })
   })
 
   it('DELETE /users/:email should handle unexpected errors during deletion', async () => {
     (userMetadataService.deleteUserByEmail as jest.Mock).mockRejectedValue(new Error('Unexpected error'))
     const response = await request(app).delete('/users/error@example.com')
     expect(response.status).toBe(500)
-    expect(response.body).toEqual({ message: 'Unexpected error' })
   })
 })

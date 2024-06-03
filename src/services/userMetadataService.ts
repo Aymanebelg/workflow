@@ -1,5 +1,9 @@
-import UserMetadata from '../models/userMetadata'
+import userMetadataDao from '../dao/userMetadataDao'
 import { type Document } from 'mongoose'
+import createLogger from 'dev.linkopus.logger'
+import { ApiError, ErrorTypes, StatusCode } from 'dev.linkopus.commonmessages'
+
+const logger = createLogger(module)
 
 interface User {
   name: string
@@ -9,29 +13,50 @@ interface User {
 
 class UserMetadataService {
   async createUser (userData: User): Promise<Document> {
-    const user = new UserMetadata(userData)
-    await user.save()
+    const user = await userMetadataDao.createUser(userData)
+    logger.info('User created successfully.')
     return user
   }
 
   async getAllUsers (): Promise<Document[]> {
-    return await UserMetadata.find()
+    const users = await userMetadataDao.getAllUsers()
+    logger.info('All users retrieved successfully.')
+    return users
   }
 
   async getUserByEmail (email: string): Promise<Document | null> {
-    return await UserMetadata.findOne({ email })
+    const user = await userMetadataDao.getUserByEmail(email)
+    if (user) {
+      logger.info('User retrieved successfully by email.')
+      return user
+    } else {
+      throw new ApiError({ name: ErrorTypes.USER_NOT_FOUND, status: StatusCode.NOT_FOUND, details: `User not found with email: ${email}` }, logger)
+    }
   }
 
   async updateUser (email: string, updateData: Partial<User>): Promise<Document | null> {
-    return await UserMetadata.findOneAndUpdate({ email }, updateData, { new: true })
+    const user = await userMetadataDao.updateUser(email, updateData)
+    if (user) {
+      logger.info('User updated successfully.')
+      return user
+    } else {
+      throw new ApiError({ name: ErrorTypes.USER_NOT_FOUND, status: StatusCode.NOT_FOUND, details: `User not found with email: ${email}` }, logger)
+    }
   }
 
   async searchUsersByName (name: string): Promise<Document[]> {
-    return await UserMetadata.find({ name: { $regex: name, $options: 'i' } })
+    const users = await userMetadataDao.searchUsersByName(name)
+    logger.info('Users searched successfully by name.')
+    return users
   }
 
   async deleteUserByEmail (email: string): Promise<{ deletedCount?: number }> {
-    const result = await UserMetadata.deleteOne({ email })
+    const result = await userMetadataDao.deleteUserByEmail(email)
+    if (result.deletedCount) {
+      logger.info('User deleted successfully.')
+    } else {
+      logger.warn('No user found to delete with email:', email)
+    }
     return result
   }
 }

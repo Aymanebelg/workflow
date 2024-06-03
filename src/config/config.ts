@@ -7,7 +7,7 @@ interface Config {
 }
 
 const config: Config = {
-  port: process.env.PORT ?? 3005,
+  port: process.env.PORT ?? 3001,
   mongodbUri: process.env.MONGODB_URI ?? 'mongodb://localhost:27017/defaultDb'
 }
 

@@ -5,7 +5,7 @@ export default {
   // Coverage configuration
   coverageThreshold: {
     global: {
-      branches: 0,//this should updated i use 0 to valid the coverage test in pull request for this repository (template)
+      branches: 75,
       functions: 75,
       lines: 75,
       statements: 75
