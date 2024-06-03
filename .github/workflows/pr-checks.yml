@@ -5,67 +5,91 @@ on:
     branches: [development]
 
 jobs:
-  setup:
+  install_dependencies:
     runs-on: ubuntu-latest
     environment: Dev
+    outputs:
+      cache-key: ${{ steps.cache-deps.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v3
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '20'
       - name: Set up .npmrc
         run: | 
           echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
           echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '20'
       - name: Cache dependencies
         id: cache-deps
         uses: actions/cache@v3
         with:
           path: ~/.npm
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
       - run: npm install
-      - name: Cache node_modules
-        uses: actions/cache@v3
+      - name: Upload node_modules
+        uses: actions/upload-artifact@v3
         with:
-          path: node_modules
-          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-modules-
-      - run: npm install
+          name: node_modules
+          path: ./node_modules
 
   test:
-    needs: setup
     runs-on: ubuntu-latest
     environment: Dev
+    needs: install_dependencies
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v1
         with:
           node-version: '20'
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
+      - name: Download node_modules
+        uses: actions/download-artifact@v3
+        with:
+          name: node_modules
+          path: ./node_modules
       - run: npm run test
 
   lint:
-    needs: setup
     runs-on: ubuntu-latest
     environment: Dev
+    needs: install_dependencies
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v1
         with:
           node-version: '20'
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
+      - name: Download node_modules
+        uses: actions/download-artifact@v3
+        with:
+          name: node_modules
+          path: ./node_modules
       - run: npm run lint
 
   coverage:
-    needs: setup
     runs-on: ubuntu-latest
     environment: Dev
+    needs: install_dependencies
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v1
         with:
           node-version: '20'
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
+      - name: Download node_modules
+        uses: actions/download-artifact@v3
+        with:
+          name: node_modules
+          path: ./node_modules
       - run: npm run coverage
       - name: Code Coverage Report
         uses: romeovs/lcov-reporter-action@v0.3.1
@@ -84,16 +108,24 @@ jobs:
         with:
           regex: '^(feat|fix|refactor|docs|test):\s\[\w+-\d+\]\s.+$'
           github_token: ${{ secrets.GITHUB_TOKEN }}
-    
+
   security-check:
-    needs: setup
     runs-on: ubuntu-latest
     environment: Dev
+    needs: install_dependencies
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - uses: actions/setup-node@v1
         with:
           node-version: '20'
-      - name: Run npm audit
-        run: npm audit --audit-level=high
+      - name: Set up .npmrc
+        run: | 
+          echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
+          echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
+      - name: Download node_modules
+        uses: actions/download-artifact@v3
+        with:
+          name: node_modules
+          path: ./node_modules
+      - run: npm audit --audit-level=high
         continue-on-error: true
