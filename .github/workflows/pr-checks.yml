@@ -5,91 +5,96 @@ on:
     branches: [development]
 
 jobs:
-  install_dependencies:
+
+  cache-dependencies:
     runs-on: ubuntu-latest
     environment: Dev
-    outputs:
-      cache-key: ${{ steps.cache-deps.outputs.cache-hit }}
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '20'
       - name: Set up .npmrc
         run: | 
           echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
           echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - name: Cache dependencies
-        id: cache-deps
+      - uses: actions/setup-node@v1
+        with:
+          node-version: '20'
+      - name: Cache node_modules
+        id: cache-node-modules
         uses: actions/cache@v3
         with:
-          path: ~/.npm
+          path: node_modules
           key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - run: npm install
-      - name: Upload node_modules
-        uses: actions/upload-artifact@v3
-        with:
-          name: node_modules
-          path: ./node_modules
 
   test:
     runs-on: ubuntu-latest
     environment: Dev
-    needs: install_dependencies
+    needs: cache-dependencies
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v1
+      - name: Restore node_modules from cache
+        uses: actions/cache@v3
         with:
-          node-version: '20'
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Set up .npmrc
         run: | 
           echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
           echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - name: Download node_modules
-        uses: actions/download-artifact@v3
+      - uses: actions/setup-node@v1
         with:
-          name: node_modules
-          path: ./node_modules
-      - run: npm run test
+          node-version: '20'
+      - run: npm install --if-present
+      - run: npm run test 
 
   lint:
     runs-on: ubuntu-latest
     environment: Dev
-    needs: install_dependencies
+    needs: cache-dependencies
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v1
+      - name: Restore node_modules from cache
+        uses: actions/cache@v3
         with:
-          node-version: '20'
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Set up .npmrc
         run: | 
           echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
           echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - name: Download node_modules
-        uses: actions/download-artifact@v3
+      - uses: actions/setup-node@v1
         with:
-          name: node_modules
-          path: ./node_modules
+          node-version: 20
+      - run: npm install --if-present
       - run: npm run lint
 
   coverage:
     runs-on: ubuntu-latest
     environment: Dev
-    needs: install_dependencies
+    needs: cache-dependencies
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v1
+      - name: Restore node_modules from cache
+        uses: actions/cache@v3
         with:
-          node-version: '20'
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Set up .npmrc
         run: | 
           echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
           echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - name: Download node_modules
-        uses: actions/download-artifact@v3
+      - uses: actions/setup-node@v1
         with:
-          name: node_modules
-          path: ./node_modules
+          node-version: '20'
+      - run: npm install --if-present
       - run: npm run coverage
       - name: Code Coverage Report
         uses: romeovs/lcov-reporter-action@v0.3.1
@@ -97,7 +102,7 @@ jobs:
           github-token: ${{ secrets.GH_PAT }}
           lcov-file: ./coverage/lcov.info
           delete-old-comments: true
-    
+
   check-pr-title:
     runs-on: ubuntu-latest
     permissions:
@@ -108,24 +113,27 @@ jobs:
         with:
           regex: '^(feat|fix|refactor|docs|test):\s\[\w+-\d+\]\s.+$'
           github_token: ${{ secrets.GITHUB_TOKEN }}
-
+    
   security-check:
     runs-on: ubuntu-latest
     environment: Dev
-    needs: install_dependencies
+    needs: cache-dependencies
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v1
+      - name: Restore node_modules from cache
+        uses: actions/cache@v3
         with:
-          node-version: '20'
+          path: node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
       - name: Set up .npmrc
         run: | 
           echo "registry=http://${{ secrets.VERDACCIO_REGISTRY }}/" > .npmrc
           echo "//${{ secrets.VERDACCIO_REGISTRY }}/:_authToken=\"${{ secrets.VERDACCIO_TOKEN }}\"" >> .npmrc
-      - name: Download node_modules
-        uses: actions/download-artifact@v3
+      - uses: actions/setup-node@v1
         with:
-          name: node_modules
-          path: ./node_modules
+          node-version: '20'
+      - run: npm install --if-present
       - run: npm audit --audit-level=high
         continue-on-error: true
